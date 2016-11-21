@@ -1,5 +1,5 @@
 package guru.bytecode.confhttpapi.model;
 
-class EntityConflictException extends Exception {
+public class EntityConflictException extends Exception {
     
 }

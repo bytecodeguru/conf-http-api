@@ -1,8 +1,8 @@
 package guru.bytecode.confhttpapi;
 
-import guru.bytecode.confhttpapi.model.Configuration;
 import guru.bytecode.confhttpapi.model.CrudRepository;
 import guru.bytecode.confhttpapi.model.InMemoryCrudRepository;
+import guru.bytecode.confhttpapi.rest.JsonConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +15,7 @@ public class ConfHttpApi {
     }
     
     @Bean
-    CrudRepository<String, Configuration> configurationRepository() {
+    CrudRepository<String, JsonConfiguration> configurationRepository() {
         return new InMemoryCrudRepository<>();
     }
     
