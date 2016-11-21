@@ -1,0 +1,10 @@
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/JerseyConfig.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/rest/ConfigurationResource.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/ConfHttpApi.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/model/EntityNotFoundException.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/model/InMemoryCrudRepository.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/model/Configuration.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/model/CrudRepository.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/rest/JsonConfiguration.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/model/Entity.java
+/Users/sep/dev/buildo/conf-http-api/src/main/java/guru/bytecode/confhttpapi/model/EntityConflictException.java
