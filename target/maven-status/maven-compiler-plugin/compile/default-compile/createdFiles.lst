@@ -1,9 +1,0 @@
-guru/bytecode/confhttpapi/model/Entity.class
-guru/bytecode/confhttpapi/model/InMemoryCrudRepository.class
-guru/bytecode/confhttpapi/model/EntityConflictException.class
-guru/bytecode/confhttpapi/model/CrudRepository.class
-guru/bytecode/confhttpapi/JerseyConfig.class
-guru/bytecode/confhttpapi/model/Configuration.class
-guru/bytecode/confhttpapi/model/EntityNotFoundException.class
-guru/bytecode/confhttpapi/rest/JsonConfiguration.class
-guru/bytecode/confhttpapi/ConfHttpApi.class
