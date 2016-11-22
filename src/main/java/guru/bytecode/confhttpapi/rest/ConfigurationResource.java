@@ -72,8 +72,12 @@ public class ConfigurationResource {
 
     @DELETE
     @Path("{id}")
-    public void update(@PathParam("id") String id) {
-        repo.delete(id);
+    public void update(@PathParam("id") String id) throws EntityNotFoundException {
+        if (repo.read(id).isPresent()) {
+            repo.delete(id);
+        } else {
+            throw new EntityNotFoundException();
+        }
     }
 
 }
