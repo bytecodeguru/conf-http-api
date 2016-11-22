@@ -37,15 +37,78 @@ Then the API should return the values for both "foo" and "bar"
 Requirements
 ------------
 
-- [ ] The service should be HTTP-based but doesn't have to be publicly available, as long as we can run it
-locally
-- [ ] The service should be simple to run locally so we can manually verify its behavior
-- [ ] The service should let you create/read/update/delete configurations
-- [ ] The resources should be served in JSON format
-- [ ] You can use a programming language of you choice
-- [ ] You can use any library or framework, but be prepared to justify your decision
-- [ ] You can use any type of storage to persist the resources. It’s ok if resources are lost when the API is restarted (i.e. you can store them in memory if you like)
-- [ ] Please add any additional functionality or behavior that you feel is important to meet the requirements
-- [ ] Please also ensure you have some form of tests (whether they be unit or integration we'll leave it up to you to decide)
-- [ ] If there are things you wanted to add but didn’t have enough time, mention them (somewhere, your choice)
+- [x] The service should be HTTP-based but doesn't have to be publicly available, as long as we can run it locally
+- [x] The service should be simple to run locally so we can manually verify its behavior
+- [x] The service should let you create/read/update/delete configurations
+- [x] The resources should be served in JSON format
+- [x] You can use a programming language of you choice
+- [x] You can use any library or framework, but be prepared to justify your decision
+- [x] You can use any type of storage to persist the resources. It’s ok if resources are lost when the API is restarted (i.e. you can store them in memory if you like)
+- [x] Please add any additional functionality or behavior that you feel is important to meet the requirements
+- [x] Please also ensure you have some form of tests (whether they be unit or integration we'll leave it up to you to decide)
+- [x] If there are things you wanted to add but didn’t have enough time, mention them (somewhere, your choice)
 
+Build instructions
+------------------
+
+To build a runnable jar:
+```
+mvn clean package
+```
+
+To build a runnable docker image:
+```
+mvn clean package docker:build
+```
+
+Run istructions
+---------------
+
+Example:
+```
+java -jar target/conf-http-api-<version>.jar
+```
+
+Example using Docker:
+```
+docker run -p 127.0.0.1:8080:8080 conf-http-api
+```
+
+Usage
+-----
+
+### Get all configurations
+```
+curl -v 'http://localhost:8080/'
+```
+
+### Get configuration with id 1
+```
+curl -v 'http://localhost:8080/1'
+```
+
+### Add new configuration
+```
+curl -v -XPOST -H "Content-type: application/json" -d '{"id":"1","name":"foo","value":"bar"}' 'http://localhost:8080/'
+```
+
+### Update configuration with id 1
+```
+curl -v -XPUT -H "Content-type: application/json" -d '{"id":"1","name":"bar","value":"baz"}' 'http://localhost:8080/1'
+```
+
+### Delete configuration with id 1
+```
+curl -v -XDELETE 'http://localhost:8080/1'
+```
+
+
+
+Implementation notes
+--------------------
+
+Useful missing features:
+- [ ] Filters
+- [ ] Sorting
+- [ ] Pagination
+- [ ] Stricter validation of json
