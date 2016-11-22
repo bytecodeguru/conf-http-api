@@ -111,4 +111,4 @@ Useful missing features:
 - [ ] Filters
 - [ ] Sorting
 - [ ] Pagination
-- [ ] Stricter validation of json
+- [ ] Stricter JSON model validation
