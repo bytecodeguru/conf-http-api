@@ -3,6 +3,7 @@ name := "conf-http-api"
 scalaVersion := "2.11.8"
 
 unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value)
+unmanagedSourceDirectories in Test := Seq((scalaSource in Compile).value)
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % "10.0.0",
