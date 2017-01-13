@@ -23,7 +23,6 @@ object Boot extends App {
 
   // TODO togliere String
   val storage = new InMemoryCrudRepository[String, Config]()
-  storage.create(Config("id1", "Giuseppe", "100"))
 
   val route = pathSingleSlash {
     get {
