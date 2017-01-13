@@ -7,7 +7,10 @@ unmanagedSourceDirectories in Test := Seq((scalaSource in Compile).value)
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http" % "10.0.0",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+  "de.heikoseeberger" %% "akka-http-circe" % "1.11.0",
+  "io.circe" %% "circe-core" % "0.6.1",
+  "io.circe" %% "circe-generic" % "0.6.1",
+  "io.circe" %% "circe-parser" % "0.6.1"
 )
 
 scalacOptions := Seq("-unchecked",
