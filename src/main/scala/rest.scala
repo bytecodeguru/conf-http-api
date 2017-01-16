@@ -17,10 +17,6 @@ object Boot extends App {
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
 
-  case class Config(id: String, name: String, value: String) extends Configuration {
-    override def getId: String = id
-  }
-
   // TODO togliere String
   val storage = new InMemoryCrudRepository[String, Config]()
 
@@ -40,11 +36,13 @@ object Boot extends App {
   } ~
   path(Segment) { id =>
     get {
-      // TODO è idiomatico?
+      // TODO è idiomatico? NO vedi sotto
       storage.read(id) match {
         case Some(c) => complete(c)
         case None => complete(NotFound)
       }
+      // se vado a capo non compila!
+      // storage.read(id).fold(complete(NotFound))(c => complete(c))
     } ~
     delete {
       storage.read(id) match {

@@ -23,6 +23,10 @@ trait CrudRepository[I, E <: Entity[I]] {
   def getAll: List[E]
 }
 
+case class Config(id: String, name: String, value: String) extends Configuration {
+  override def getId: String = id
+}
+
 class InMemoryCrudRepository[I, E <: Entity[I]] extends CrudRepository[I, E] {
   private val entityMap: java.util.Map[I, E] = new java.util.concurrent.ConcurrentSkipListMap()
 
