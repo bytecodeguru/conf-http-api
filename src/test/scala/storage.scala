@@ -1,7 +1,8 @@
 package storage
 
 import org.scalatest._
-import rest.Config
+import storage._
+import rest._
 
 object ModelSpec {
   def newStorage = new InMemoryStorage[String, Config]()
@@ -22,13 +23,13 @@ class ModelSpec extends FlatSpec with Matchers {
     storage.read(id) should be (Some(Config(id, "name", "value")))
   }
 
-  it should "throw EntityConflictException when creating a config with a duplicated id" in {
+  it should "return a Left when creating a config with a duplicated id" in {
     val storage = newStorage
     val id = "id"
-    a [DuplicatedIdException] should be thrownBy {
-      storage.create(Config(id, "name", "value"))
-      storage.create(Config(id, "name", "value"))
-    }
+    storage.create(Config(id, "name", "value")).isRight should be (true)
+    val e = storage.create(Config(id, "name", "value"))
+    e.isLeft should be (true)
+    e.left.get should be (DuplicatedIdError)
   }
 
   it should "be empty after creating and deleting a config" in {
@@ -47,9 +48,9 @@ class ModelSpec extends FlatSpec with Matchers {
 
   it should "throw EntityNotFoundException if a non existing config is updated" in {
     val storage = newStorage
-    a [EntityNotFoundException] should be thrownBy {
-      storage.update(Config("id", "name", "value"))
-    }
+    val e = storage.update(Config("id", "name", "value"))
+    e.isLeft should be (true)
+    e.left.get should be (EntityNotFoundError)
   }
 
 }

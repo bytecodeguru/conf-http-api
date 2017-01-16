@@ -6,15 +6,15 @@ trait Entity[I] {
   def getId: I
 }
 
-class DuplicatedIdException extends Exception
+sealed trait CreateError
+final case object DuplicatedIdError extends CreateError
 
-class EntityNotFoundException extends Exception
+sealed trait UpdateError
+final case object EntityNotFoundError extends UpdateError
 
 trait Storage[I, E <: Entity[I]] {
-  @throws[DuplicatedIdException]
-  def create(entity: E): Unit
-  @throws[EntityNotFoundException]
-  def update(entity: E): Unit
+  def create(entity: E): Either[CreateError, E]
+  def update(entity: E): Either[UpdateError, E]
   def delete(id: I): Unit
   def read(id: I): Option[E]
   def getAll: List[E]
@@ -23,15 +23,17 @@ trait Storage[I, E <: Entity[I]] {
 class InMemoryStorage[I, E <: Entity[I]] extends Storage[I, E] {
   private val entityMap: java.util.Map[I, E] = new java.util.concurrent.ConcurrentSkipListMap()
 
-  override def create(entity: E): Unit = {
-    if (entityMap.putIfAbsent(entity.getId, entity) != null) {
-      throw new DuplicatedIdException()
+  override def create(e: E): Either[CreateError, E] = {
+    entityMap.putIfAbsent(e.getId, e) match {
+      case null => Right(e)
+      case _    => Left(DuplicatedIdError)
     }
   }
 
-  override def update(entity: E): Unit = {
-    if (entityMap.replace(entity.getId, entity) == null) {
-      throw new EntityNotFoundException()
+  override def update(e: E): Either[UpdateError, E] = {
+    entityMap.replace(e.getId, e) match {
+      case null => Left(EntityNotFoundError)
+      case _    => Right(e)
     }
   }
 
