@@ -1,4 +1,4 @@
-package model
+package storage
 
 import collection.JavaConverters._
 
@@ -6,15 +6,12 @@ trait Entity[I] {
   def getId: I
 }
 
-trait Configuration extends Entity[String]
-
-// id duplicato
-class EntityConflictException extends Exception
+class DuplicatedIdException extends Exception
 
 class EntityNotFoundException extends Exception
 
-trait CrudRepository[I, E <: Entity[I]] {
-  @throws[EntityConflictException]
+trait Storage[I, E <: Entity[I]] {
+  @throws[DuplicatedIdException]
   def create(entity: E): Unit
   @throws[EntityNotFoundException]
   def update(entity: E): Unit
@@ -23,16 +20,12 @@ trait CrudRepository[I, E <: Entity[I]] {
   def getAll: List[E]
 }
 
-case class Config(id: String, name: String, value: String) extends Configuration {
-  override def getId: String = id
-}
-
-class InMemoryCrudRepository[I, E <: Entity[I]] extends CrudRepository[I, E] {
+class InMemoryStorage[I, E <: Entity[I]] extends Storage[I, E] {
   private val entityMap: java.util.Map[I, E] = new java.util.concurrent.ConcurrentSkipListMap()
 
   override def create(entity: E): Unit = {
     if (entityMap.putIfAbsent(entity.getId, entity) != null) {
-      throw new EntityConflictException()
+      throw new DuplicatedIdException()
     }
   }
 

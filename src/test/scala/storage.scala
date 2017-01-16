@@ -1,9 +1,10 @@
-package model
+package storage
 
 import org.scalatest._
+import rest.Config
 
 object ModelSpec {
-  def newStorage = new InMemoryCrudRepository[String, Config]()
+  def newStorage = new InMemoryStorage[String, Config]()
 }
 
 class ModelSpec extends FlatSpec with Matchers {
@@ -24,7 +25,7 @@ class ModelSpec extends FlatSpec with Matchers {
   it should "throw EntityConflictException when creating a config with a duplicated id" in {
     val storage = newStorage
     val id = "id"
-    a [EntityConflictException] should be thrownBy {
+    a [DuplicatedIdException] should be thrownBy {
       storage.create(Config(id, "name", "value"))
       storage.create(Config(id, "name", "value"))
     }

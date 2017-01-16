@@ -1,83 +1,74 @@
 package rest
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
-import scala.io.StdIn
 import de.heikoseeberger.akkahttpcirce.CirceSupport._
 import io.circe.generic.auto._
 import StatusCodes._
-import model._
+import storage._
 
-object Boot extends App {
+case class Config(id: String, name: String, value: String) extends Entity[String] {
+  override def getId: String = id
+}
 
-  implicit val system = ActorSystem("http-router")
-  implicit val materializer = ActorMaterializer()
-  implicit val executionContext = system.dispatcher
-
+object Rest {
   // TODO togliere String
-  val storage = new InMemoryCrudRepository[String, Config]()
+  val storage = new InMemoryStorage[String, Config]()
 
-  val route = pathSingleSlash {
+  def routes = pathSingleSlash {
+    // GET /
     get {
       complete(storage.getAll)
     } ~
+    // POST /
+    // TODO sembra che se non riesce a deserializzare restituisce Bad request
     ( post & entity(as[Config]) ) { c =>
       try {
         storage.create(c)
         // TODO aggiungere location
-        complete(Created)
+        complete(HttpResponse(Created, List(headers.Location(s"/${c.getId}"))))
       } catch {
-        case _: EntityConflictException => complete(Conflict)
+        case _: DuplicatedIdException => complete(HttpResponse(Conflict))
       }
     }
   } ~
   path(Segment) { id =>
+    // GET /:id
     get {
       // TODO è idiomatico? NO vedi sotto
       storage.read(id) match {
         case Some(c) => complete(c)
-        case None => complete(NotFound)
+        case None => complete(HttpResponse(NotFound))
       }
       // se vado a capo non compila!
-      // storage.read(id).fold(complete(NotFound))(c => complete(c))
+      // storage.read(id).fold(complete(NotFound -> None))(c => complete(c))
     } ~
+    // DELETE /:id
     delete {
       storage.read(id) match {
         case Some(c) => {
           storage.delete(id)
-          complete(NoContent)
+          complete(HttpResponse(NoContent))
         }
-        case None => complete(NotFound)
+        case None => complete(HttpResponse(NotFound))
       }
     } ~
+    // PUT /:id
     ( put & entity(as[Config]) ) { c =>
       if (c.id == id) {
         try {
           storage.update(c)
-          complete(NoContent)
+          complete(HttpResponse(NoContent))
         } catch {
-          case _: EntityNotFoundException => complete(NotFound)
+          case _: EntityNotFoundException => complete(HttpResponse(NotFound))
         }
       } else {
         storage.read(id) match {
-          case Some(c) => complete(Conflict)
-          case None => complete(NotFound)
+          case Some(c) => complete(HttpResponse(Conflict))
+          case None => complete(HttpResponse(NotFound))
         }
       }
     }
   }
-
-  val server = Http().bindAndHandle(route, "localhost", 8080)
-
-  server.onComplete(_ => println("Server online at http://localhost:8080/\nPress RETURN to stop..."))
-
-  StdIn.readLine()
-
-  server
-    .flatMap(s => s.unbind())
-    .onComplete(_ => system.terminate())
-
 }
+
