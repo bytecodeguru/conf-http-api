@@ -8,7 +8,9 @@ import guru.bytecode.confhttpapi.model.EntityConflictException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriBuilderException;
 import static org.assertj.core.api.Assertions.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +18,10 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +37,8 @@ public class ConfigurationResourceIT {
     private static final TypeReference<List<JsonConfiguration>> LIST_CONFIGURATION_TYPE = new TypeReference<List<JsonConfiguration>>() {
     };
 
-    @LocalServerPort int localServerPort;
+//    @LocalServerPort int localServerPort;
+    int localServerPort = 8080;
 
     @Autowired
     private TestRestTemplate client;
@@ -40,37 +46,50 @@ public class ConfigurationResourceIT {
     @Autowired
     private ObjectMapper jackson;
 
-    @Autowired
-    private CrudRepository<String, JsonConfiguration> repo;
-
+//    @Autowired
+//    private CrudRepository<String, JsonConfiguration> repo;
     @Before
-    public void preconditions() {
-        assertThat(repo.getAll()).isEmpty();
-    }
-
-    @Test
     public void getAllIsEmpty() throws IOException {
-        String json = client.getForObject("/", String.class);
+        String json = client.getForObject(path("/"), String.class);
         List<JsonConfiguration> configurationList = jackson.readValue(json, LIST_CONFIGURATION_TYPE);
         assertThat(configurationList).isEmpty();
+    }
+
+    private URI path(String path) throws UriBuilderException, IllegalArgumentException {
+        return getBaseUriBuilder().path(path).build();
     }
 
     @Test
     public void getAllIsNotEmpty() throws IOException, EntityConflictException {
         JsonConfiguration configuration = new JsonConfiguration("1", "name", "value");
-        repo.create(configuration);
-        String json = client.getForObject("/", String.class);
+        repoCreate(configuration);
+        String json = client.getForObject(path("/"), String.class);
         List<JsonConfiguration> configurationList = jackson.readValue(json, LIST_CONFIGURATION_TYPE);
         assertThat(configurationList)
                 .usingFieldByFieldElementComparator()
                 .containsOnly(configuration);
-        repo.delete("1");
+        repoDelete("1");
+    }
+
+    private void repoDelete(String id) {
+        RequestEntity<Void> request = RequestEntity
+                .delete(path(id))
+                .build();
+        assertHttpStatus(
+                client.exchange(request, Void.class),
+                HttpStatus.NO_CONTENT
+        );
+    }
+
+    private void repoCreate(JsonConfiguration configuration) throws EntityConflictException {
+        ResponseEntity<Void> response = client.postForEntity(path("/"), configuration, Void.class);
+        assertHttpStatus(response, HttpStatus.CREATED);
     }
 
     @Test
     public void getNonExistent() {
         assertHttpStatus(
-                client.getForEntity("/1", JsonConfiguration.class),
+                client.getForEntity(path("/1"), JsonConfiguration.class),
                 HttpStatus.NOT_FOUND
         );
     }
@@ -78,37 +97,37 @@ public class ConfigurationResourceIT {
     @Test
     public void getExistent() throws EntityConflictException {
         JsonConfiguration configuration = new JsonConfiguration("1", "name", "value");
-        repo.create(configuration);
-        assertThat(client.getForObject("/1", JsonConfiguration.class))
+        repoCreate(configuration);
+        assertThat(client.getForObject(path("/1"), JsonConfiguration.class))
                 .isEqualToComparingFieldByField(configuration);
-        repo.delete("1");
+        repoDelete("1");
     }
 
     @Test
     public void postNonExistent() {
         JsonConfiguration configuration = new JsonConfiguration("1", "name", "value");
-        ResponseEntity<Void> response = client.postForEntity("/", configuration, Void.class);
+        ResponseEntity<Void> response = client.postForEntity(path("/"), configuration, Void.class);
         assertHttpStatus(response, HttpStatus.CREATED);
         assertThat(response.getHeaders().getLocation()).hasPath("/1");
-        repo.delete("1");
+        repoDelete("1");
     }
 
     @Test
     public void postExistent() throws EntityConflictException {
         JsonConfiguration configuration = new JsonConfiguration("1", "name", "value");
-        repo.create(configuration);
+        repoCreate(configuration);
         assertHttpStatus(
-                client.postForEntity("/", configuration, Void.class),
+                client.postForEntity(path("/"), configuration, Void.class),
                 HttpStatus.CONFLICT
         );
-        repo.delete("1");
+        repoDelete("1");
     }
 
     @Test
     public void postInvalid() throws EntityConflictException {
         JsonConfiguration configuration = new JsonConfiguration(null, "name", "value");
         assertHttpStatus(
-                client.postForEntity("/", configuration, Void.class),
+                client.postForEntity(path("/"), configuration, Void.class),
                 HttpStatus.BAD_REQUEST
         );
     }
@@ -117,73 +136,82 @@ public class ConfigurationResourceIT {
     public void putNonExistent() {
         JsonConfiguration configuration = new JsonConfiguration("1", "name", "value");
         RequestEntity<JsonConfiguration> request = RequestEntity
-                .put(getBaseUriBuilder().path("1").build())
+                .put(path("1"))
                 .body(configuration);
         assertHttpStatus(
-                client.exchange(request, Void.class), 
+                client.exchange(request, Void.class),
                 HttpStatus.NOT_FOUND
         );
-        assertThat(repo.read("1")).isEmpty();
+        assertThat(repoRead("1")).isEmpty();
     }
-    
+
+    private Optional<JsonConfiguration> repoRead(String id) {
+        ResponseEntity<JsonConfiguration> response = client.getForEntity(path("/" + id), JsonConfiguration.class);
+        if (response.getStatusCode().equals(HttpStatus.OK)) {
+            return Optional.ofNullable(response.getBody());
+        } else {
+            return Optional.empty();
+        }
+    }
+
     @Test
     public void putExistent() throws EntityConflictException {
         JsonConfiguration configuration = new JsonConfiguration("1", "name", "value");
-        repo.create(configuration);
+        repoCreate(configuration);
         JsonConfiguration updated = new JsonConfiguration("1", "name2", "value2");
         RequestEntity<JsonConfiguration> request = RequestEntity
-                .put(getBaseUriBuilder().path("1").build())
+                .put(path("1"))
                 .body(updated);
         assertHttpStatus(
-                client.exchange(request, Void.class), 
+                client.exchange(request, Void.class),
                 HttpStatus.NO_CONTENT
         );
-        assertThat(repo.read("1")).hasValueSatisfying(c -> 
-                assertThat(c).isEqualToComparingFieldByField(updated)
+        assertThat(repoRead("1")).hasValueSatisfying(c
+                -> assertThat(c).isEqualToComparingFieldByField(updated)
         );
-        repo.delete("1");
+        repoDelete("1");
     }
-    
+
     @Test
     public void putConflict() throws EntityConflictException {
         JsonConfiguration configuration = new JsonConfiguration("1", "name", "value");
-        repo.create(configuration);
+        repoCreate(configuration);
         JsonConfiguration updated = new JsonConfiguration("2", "name", "value");
         RequestEntity<JsonConfiguration> request = RequestEntity
-                .put(getBaseUriBuilder().path("1").build())
+                .put(path("1"))
                 .body(updated);
         assertHttpStatus(
-                client.exchange(request, Void.class), 
+                client.exchange(request, Void.class),
                 HttpStatus.CONFLICT
         );
-        assertThat(repo.read("1")).hasValueSatisfying(c -> 
-                assertThat(c).isEqualToComparingFieldByField(configuration)
+        assertThat(repoRead("1")).hasValueSatisfying(c
+                -> assertThat(c).isEqualToComparingFieldByField(configuration)
         );
-        assertThat(repo.read("2")).isEmpty();
-        repo.delete("1");
+        assertThat(repoRead("2")).isEmpty();
+        repoDelete("1");
     }
-    
+
     @Test
     public void deleteExistent() throws EntityConflictException {
         JsonConfiguration configuration = new JsonConfiguration("1", "name", "value");
-        repo.create(configuration);
+        repoCreate(configuration);
         RequestEntity<Void> request = RequestEntity
-                .delete(getBaseUriBuilder().path("1").build())
+                .delete(path("1"))
                 .build();
         assertHttpStatus(
-                client.exchange(request, Void.class), 
+                client.exchange(request, Void.class),
                 HttpStatus.NO_CONTENT
         );
-        assertThat(repo.read("1")).isEmpty();
+        assertThat(repoRead("1")).isEmpty();
     }
-    
+
     @Test
     public void deleteNonExistent() throws EntityConflictException {
         RequestEntity<Void> request = RequestEntity
-                .delete(getBaseUriBuilder().path("1").build())
+                .delete(path("1"))
                 .build();
         assertHttpStatus(
-                client.exchange(request, Void.class), 
+                client.exchange(request, Void.class),
                 HttpStatus.NOT_FOUND
         );
     }
