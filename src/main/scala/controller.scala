@@ -2,7 +2,8 @@ package controller
 
 import storage._
 
-case class Config(id: String, name: String, value: String) extends Entity[String] {
+case class Config(id: String, name: String, value: String) extends Entity {
+  type I = String
   override def getId: String = id
 }
 
@@ -14,7 +15,7 @@ final case object UpdateNotFound extends UpdateError
 final case object IdConflict extends UpdateError
 
 object Controller {
-  private val storage = new InMemoryStorage[String, Config]()
+  private val storage = new InMemoryStorage[Config]()
 
   def getAll: List[Config] = storage.getAll
 

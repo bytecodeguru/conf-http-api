@@ -5,7 +5,7 @@ import storage._
 import controller._
 
 object ModelSpec {
-  def newStorage = new InMemoryStorage[String, Config]()
+  def newStorage = new InMemoryStorage[Config]()
 }
 
 class ModelSpec extends FlatSpec with Matchers {
