@@ -2,7 +2,7 @@ package storage
 
 import org.scalatest._
 import storage._
-import rest._
+import controller._
 
 object ModelSpec {
   def newStorage = new InMemoryStorage[String, Config]()
@@ -29,7 +29,7 @@ class ModelSpec extends FlatSpec with Matchers {
     storage.create(Config(id, "name", "value")).isRight should be (true)
     val e = storage.create(Config(id, "name", "value"))
     e.isLeft should be (true)
-    e.left.get should be (DuplicatedIdError)
+    e.left.get should be (DuplicatedId)
   }
 
   it should "be empty after creating and deleting a config" in {
@@ -50,7 +50,7 @@ class ModelSpec extends FlatSpec with Matchers {
     val storage = newStorage
     val e = storage.update(Config("id", "name", "value"))
     e.isLeft should be (true)
-    e.left.get should be (EntityNotFoundError)
+    e.left.get should be (NotFound)
   }
 
 }

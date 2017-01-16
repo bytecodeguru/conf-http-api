@@ -7,14 +7,14 @@ trait Entity[I] {
 }
 
 sealed trait CreateError
-final case object DuplicatedIdError extends CreateError
+final case object DuplicatedId extends CreateError
 
 sealed trait UpdateError
-final case object EntityNotFoundError extends UpdateError
+final case object NotFound extends UpdateError
 
 trait Storage[I, E <: Entity[I]] {
   def create(entity: E): Either[CreateError, E]
-  def update(entity: E): Either[UpdateError, E]
+  def update(entity: E): Either[UpdateError, Unit]
   def delete(id: I): Unit
   def read(id: I): Option[E]
   def getAll: List[E]
@@ -26,14 +26,14 @@ class InMemoryStorage[I, E <: Entity[I]] extends Storage[I, E] {
   override def create(e: E): Either[CreateError, E] = {
     entityMap.putIfAbsent(e.getId, e) match {
       case null => Right(e)
-      case _    => Left(DuplicatedIdError)
+      case _    => Left(DuplicatedId)
     }
   }
 
-  override def update(e: E): Either[UpdateError, E] = {
+  override def update(e: E): Either[UpdateError, Unit] = {
     entityMap.replace(e.getId, e) match {
-      case null => Left(EntityNotFoundError)
-      case _    => Right(e)
+      case null => Left(NotFound)
+      case _    => Right(())
     }
   }
 
