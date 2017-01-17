@@ -2,42 +2,45 @@ package storage
 
 import collection.JavaConverters._
 
-trait Entity[I] {
+trait Entity {
+  type I
   def getId: I
 }
 
-class DuplicatedIdException extends Exception
+sealed trait CreateError
+final case object DuplicatedId extends CreateError
 
-class EntityNotFoundException extends Exception
+sealed trait UpdateError
+final case object NotFound extends UpdateError
 
-trait Storage[I, E <: Entity[I]] {
-  @throws[DuplicatedIdException]
-  def create(entity: E): Unit
-  @throws[EntityNotFoundException]
-  def update(entity: E): Unit
-  def delete(id: I): Unit
-  def read(id: I): Option[E]
+trait Storage[E <: Entity] {
+  def create(entity: E): Either[CreateError, E]
+  def update(entity: E): Either[UpdateError, Unit]
+  def delete(id: E#I): Unit
+  def read(id: E#I): Option[E]
   def getAll: List[E]
 }
 
-class InMemoryStorage[I, E <: Entity[I]] extends Storage[I, E] {
-  private val entityMap: java.util.Map[I, E] = new java.util.concurrent.ConcurrentSkipListMap()
+class InMemoryStorage[E <: Entity] extends Storage[E] {
+  private val entityMap: java.util.Map[E#I, E] = new java.util.concurrent.ConcurrentSkipListMap()
 
-  override def create(entity: E): Unit = {
-    if (entityMap.putIfAbsent(entity.getId, entity) != null) {
-      throw new DuplicatedIdException()
+  override def create(e: E): Either[CreateError, E] = {
+    entityMap.putIfAbsent(e.getId, e) match {
+      case null => Right(e)
+      case _    => Left(DuplicatedId)
     }
   }
 
-  override def update(entity: E): Unit = {
-    if (entityMap.replace(entity.getId, entity) == null) {
-      throw new EntityNotFoundException()
+  override def update(e: E): Either[UpdateError, Unit] = {
+    entityMap.replace(e.getId, e) match {
+      case null => Left(NotFound)
+      case _    => Right(())
     }
   }
 
-  override def delete(id: I): Unit = entityMap.remove(id)
+  override def delete(id: E#I): Unit = entityMap.remove(id)
 
-  override def read(id: I): Option[E] = Option(entityMap.get(id))
+  override def read(id: E#I): Option[E] = Option(entityMap.get(id))
 
   override def getAll: List[E] = entityMap.values().asScala.toList
 }
